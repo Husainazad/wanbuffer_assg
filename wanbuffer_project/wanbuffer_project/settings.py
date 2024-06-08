@@ -160,5 +160,3 @@ SIMPLE_JWT = {
 
     'JTI_CLAIM': 'jti',
 }
-
-FRONTEND_URL = 'http://localhost:8000/'

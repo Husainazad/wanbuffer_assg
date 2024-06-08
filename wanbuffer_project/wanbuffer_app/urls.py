@@ -6,5 +6,6 @@ urlpatterns = [
     path('login', UserLoginView.as_view(), name='user-login'),
     path('update', UpdateUserDetailsView.as_view(), name='user-update'),
     path('adminpanel', AdminPanelView.as_view(), name='admin-panel'),
-    path('password-reset', PasswordResetRequestView.as_view(), name='password-reset'),
+    path('reset-password', PasswordResetRequestView.as_view(), name='password-reset-request'),
+    path('reset-password/<str:request_uuid>', ResetPasswordView.as_view(), name='password-reset'),
 ]

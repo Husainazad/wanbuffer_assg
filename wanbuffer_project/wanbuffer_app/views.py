@@ -7,9 +7,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from .helpers import get_tokens_for_user
 from .serializers import *
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
-from django.core.mail import send_mail, BadHeaderError
 from django.http import HttpResponse
 
 
@@ -87,20 +87,41 @@ class PasswordResetRequestView(APIView):
                 return Response({"msg": "No user found!"}, status=status.HTTP_404_NOT_FOUND)
 
             reset_token = PasswordResetToken.objects.create(user=user)
+            FRONTEND_URL = 'http://localhost:8000'
+            reset_link = f"{FRONTEND_URL}/reset-password/{reset_token.token}"
 
-            reset_link = f"{settings.FRONTEND_URL}/reset-password/{reset_token.token}/"
-            try:
-                # Send email
-                subject = 'Password Reset Request',
-                message = f'Click the link to reset your password: {reset_link}',
-                email_from = settings.EMAIL_HOST
-                send_mail(subject, message, email_from, [user.email], fail_silently=False)
-
-            except BadHeaderError:
-                return HttpResponse('Invalid header found.', status=400)
-
-            except Exception as e:
-                return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Send email
+            subject = 'Password Reset Request'
+            message = f'Click the link to reset your password: {reset_link}'
+            # email_from = settings.EMAIL_HOST
+            email_from = settings.EMAIL_HOST_USER
+            send_mail(subject, message, email_from, [user.email])
 
             return Response({"detail": "Password reset link sent."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    def post(self, request, request_uuid):
+        try:
+            request_instance = PasswordResetToken.objects.get(token=request_uuid)
+
+        except PasswordResetToken.DoesNotExist:
+            return Response({"msg": "Reset Link is expired!"},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        except ValidationError as e:
+            return Response({"msg": "Invalid Reset Link!"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        user = CustomUser.objects.get(email=request_instance.user)
+        if data['new_password'] == data['new_password_confirm']:
+            user.set_password(data['new_password'])
+            user.save()
+            return Response({
+                "msg": "Password Changed Successfully!"
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            "msg": "Password didn't match, please try again!"
+        }, status=status.HTTP_400_BAD_REQUEST)
