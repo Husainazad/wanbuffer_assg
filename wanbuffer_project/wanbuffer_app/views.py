@@ -88,7 +88,7 @@ class PasswordResetRequestView(APIView):
 
             reset_token = PasswordResetToken.objects.create(user=user)
             FRONTEND_URL = 'http://localhost:8000'
-            reset_link = f"{FRONTEND_URL}/reset-password/{reset_token.token}"
+            reset_link = f"{FRONTEND_URL}/api/reset-password/{reset_token.token}"
 
             # Send email
             subject = 'Password Reset Request'

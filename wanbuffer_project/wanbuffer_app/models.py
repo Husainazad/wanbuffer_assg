@@ -54,5 +54,4 @@ class PasswordResetToken(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid(self):
-        # Token is valid for 1 hour
         return timezone.now() < self.created_at + timezone.timedelta(hours=1)
